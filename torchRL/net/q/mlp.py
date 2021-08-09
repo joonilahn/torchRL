@@ -50,7 +50,7 @@ class DuelingMLP(MLP):
         features =  self.net(state)
         value = self.value_fn(features)
         advantages = self.advantage_fn(features)
-        return value.repeat(1, self.action_dim) + advantages
+        return value + advantages - ( advantages.mean() / self.action_dim )
 
 def build_mlp(num_layers, input_dim, hidden_dim, output_dim):
     layers = []

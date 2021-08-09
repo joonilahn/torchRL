@@ -6,7 +6,7 @@ PyTorch Implementations of basic Reinforcement Learning algorithms.
 
 * You can easily set up hyper-parameters for training by adjusting yaml-formatted config files.
 
-* Default environent is OpenAI gym's "CartPole-v3".
+* Default environment is OpenAI gym's "CartPole-v3".
 
 
 ## Algorithms

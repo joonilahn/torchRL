@@ -3,7 +3,7 @@ NET:
 
 ENV:
   REWARD: 0.01
-  REWARD_DONE: -1.0
+  REWARD_DONE: 0.0
 
 TRAIN:
   TRAINER: "DQNTrainer"

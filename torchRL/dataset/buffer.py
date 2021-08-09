@@ -40,6 +40,12 @@ class BufferData:
             "actions": actions,
             "dones": dones,
         }
+    
+    def get_buffer(self, reversed=False):
+        if reversed:
+            return self.buffer[::-1]
+        else:
+            return self.buffer
 
     def clear(self):
         self.buffer = []
