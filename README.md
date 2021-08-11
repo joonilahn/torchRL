@@ -17,6 +17,7 @@ PyTorch Implementations of basic Reinforcement Learning algorithms.
 )
 7. [Dueling DQN](https://arxiv.org/abs/1511.06581) (Dueling Network Architectures for Deep Reinforcement Learning
 )
+8. Actor-Critic (Actor-Critic Policy)
 
 ## Dependencies
 1. PyTorch (This package was tested on cpu version of PyTorch v1.9. But chances are you'll be fine with most of older versions of PyTorch!)

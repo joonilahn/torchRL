@@ -1,5 +1,5 @@
 NET:
-  NAME: "MLP"
+  NAME: "ActionValueMLP"
 
 ENV:
   REWARD: 0.01

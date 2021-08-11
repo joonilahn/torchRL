@@ -3,11 +3,17 @@ from yacs.config import CfgNode as CN
 _C = CN()
 
 _C.NET = CN()
-_C.NET.NAME = "MLP"
+_C.NET.NAME = "ActionValueMLP"
 _C.NET.NUM_LAYERS = 2
 _C.NET.STATE_DIM = 4
 _C.NET.HIDDEN_DIM = 128
 _C.NET.ACTION_DIM = 2
+
+_C.CRITIC = CN()
+_C.CRITIC.NAME = "CriticMLP"
+_C.CRITIC.NUM_LAYERS = 2
+_C.CRITIC.STATE_DIM = 4
+_C.CRITIC.HIDDEN_DIM = 128
 
 _C.ENV = CN()
 _C.ENV.NAME = "CartPole-v3"
@@ -28,6 +34,7 @@ _C.TRAIN.TARGET_SYNC_INTERVAL = 100
 _C.TRAIN.NUM_EPISIODES_AVG_STEPS = 20
 _C.TRAIN.AVG_STEPS_TO_TERMINATE = 5000
 _C.TRAIN.EPISILON_GREEDY_MINMAX = (0.01, 0.08)
+
 
 def get_cfg_defaults():
     return _C.clone()

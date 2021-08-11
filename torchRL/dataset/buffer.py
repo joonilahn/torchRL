@@ -1,4 +1,5 @@
 import random
+
 import torch
 
 
@@ -40,7 +41,7 @@ class BufferData:
             "actions": actions,
             "dones": dones,
         }
-    
+
     def get_buffer(self, reversed=False):
         if reversed:
             return self.buffer[::-1]
