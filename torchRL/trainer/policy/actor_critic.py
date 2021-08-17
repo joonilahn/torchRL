@@ -4,7 +4,6 @@ import torch.nn as nn
 from torch.optim import Adam
 
 from ...dataset import BufferData
-# from ...net import build_Qnet, build_Vnet
 from ...net import ActorCriticMLP
 from ..builder import TRAINERS
 from ..base import BaseTrainer
@@ -16,7 +15,6 @@ class ActorCriticTrainer(BaseTrainer):
 
     def __init__(self, env, cfg):
         super(ActorCriticTrainer, self).__init__(env, cfg)
-        # self.actor_critic = ActorCriticMLP(build_Qnet(cfg.NET), build_Vnet(cfg.CRITIC))
         self.actor_critic = ActorCriticMLP()
         self.buffer = BufferData()
 
@@ -128,18 +126,11 @@ class ActorCriticTrainer(BaseTrainer):
             self.losses_critic.append(float(loss_critic))
             self.global_iters += 1
 
-    def train(self):
+    def _train(self):
         """Train the Policy."""
         for episode_num in range(self.cfg.TRAIN.NUM_EPISODES):
             steps = self.run_single_episode(episode_num)
             self.steps_history.append(steps)
-
-            # update the q_net (experience replay)
-            # if (
-            #     episode_num % self.cfg.TRAIN.TRAIN_INTERVAL == 0
-            #     and len(self.buffer) > self.cfg.TRAIN.BATCH_SIZE
-            # ):
-            #     self.update_experience_replay()
 
             if episode_num % self.cfg.TRAIN.VERBOSE_INTERVAL == 0:
                 self.log_info(episode_num)
@@ -149,7 +140,7 @@ class ActorCriticTrainer(BaseTrainer):
 
     def log_info(self, episode_num):
         """log current information for the training."""
-        print(
+        self.logger.info(
             f"Episode: {episode_num + 1}, Step: {self.steps_history[-1]}, "
             f"Last {self.cfg.TRAIN.NUM_EPISIODES_AVG_STEPS} "
             f"Avg Steps: {np.mean(self.steps_history[-self.cfg.TRAIN.NUM_EPISIODES_AVG_STEPS:])}, "
@@ -159,3 +150,6 @@ class ActorCriticTrainer(BaseTrainer):
             f"Last {self.cfg.TRAIN.NUM_EPISIODES_AVG_STEPS} "
             f"Avg Loss: {np.mean(self.losses[-self.cfg.TRAIN.NUM_EPISIODES_AVG_STEPS:]):.6f}"
         )
+
+    def save_model(self):
+        self._save_model(self.actor_critic)

@@ -69,7 +69,7 @@ class DQNTrainer(QLearningTrainer):
             self.losses.append(float(loss.detach().data))
             self.global_iters += 1
 
-    def train(self):
+    def _train(self):
         """Train the q network"""
         for episode_num in range(self.cfg.TRAIN.NUM_EPISODES):
             steps = self.run_single_episode(episode_num)
@@ -89,7 +89,7 @@ class DQNTrainer(QLearningTrainer):
                 self.log_info(episode_num)
 
             if self.early_stopping_condition():
-                return True
+                break
 
     def estimate_target_values(self, next_states):
         """Estimate the target values based on DQN.

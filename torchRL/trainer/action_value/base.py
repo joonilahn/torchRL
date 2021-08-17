@@ -1,5 +1,6 @@
 from torchRL.trainer.base import BaseTrainer
 import numpy as np
+import torch
 import torch.nn as nn
 from torch.optim import Adam
 
@@ -26,3 +27,6 @@ class QTrainer(BaseTrainer):
         """Get epsilon value based on linear annealing."""
         self.epsilon = max(self.e_greedy_min, self.e_greedy_max - self.e_greedy_min * (episode_num / 200))
         return self.epsilon
+    
+    def save_model(self):
+        self._save_model(self.q_net)

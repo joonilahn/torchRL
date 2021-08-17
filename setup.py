@@ -9,8 +9,8 @@ if __name__ == "__main__":
         packages=find_packages(),
         install_requires=[
             "torch>=1.6.0",
-            "numpy>=1.21.1",
-            "gym==0.18.3",
-            "yacs==0.1.8",
+            "numpy",
+            "gym",
+            "yacs",
         ],
     )
