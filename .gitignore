@@ -1,4 +1,7 @@
 __pycache__/
 .ipynb_checkpoints
 .vscode
+torchRL.egg-info
+.DS_Store
+output/
 notebooks

@@ -1,6 +1,6 @@
 import torch
 
-from ...dataset import BufferData
+from ...data import build_dataset
 from ...net import build_Qnet
 from ..builder import TRAINERS
 from .qlearning import QLearningTrainer
@@ -13,35 +13,35 @@ class DQNTrainer(QLearningTrainer):
     def __init__(self, env, cfg):
         super(QLearningTrainer, self).__init__(env, cfg)
         self.q_target = build_Qnet(cfg.NET)
+        if self.use_gpu:
+            self.q_target.to(torch.device("cuda"))
         self.q_target.copy_parameters(self.q_net)
         self.q_target.eval()
-        self.buffer = BufferData()
+        self.buffer = build_dataset(cfg)
 
     def run_single_episode(self, episode_num):
         """Run a single episode for episodic environment.
         Every observation is stored in the memory buffer.
         """
-        steps = 0
+        rewards = 0.0
         done = False
         state = self.env.reset()
         e = self.e_greedy_linear_annealing(episode_num)
 
         while not done:
             self.q_net.eval()
-            action = self.q_net.predict_e_greedy(state, self.env, e)
+            action = self.q_net.predict_e_greedy(self.pipeline(state), self.env, e)
             next_state, reward, done, _ = self.env.step(action)
 
-            if done:
-                reward = self.cfg.ENV.REWARD_DONE
-            else:
-                reward = self.cfg.ENV.REWARD
+            # scale the reward
+            reward *= self.cfg.ENV.REWARD_SCALE
 
             # save data to the buffer
             self.buffer.stack((state, next_state, reward, action, done))
             state = next_state
-            steps += 1
+            rewards += reward / self.cfg.ENV.REWARD_SCALE
 
-        return steps
+        return rewards
 
     def update_experience_replay(self):
         """Update (train) the network using experience replay technique."""
@@ -50,9 +50,9 @@ class DQNTrainer(QLearningTrainer):
             data = self.buffer.load(self.cfg.TRAIN.BATCH_SIZE)
             states = data["states"]
             next_states = data["next_states"]
-            rewards = data["rewards"]
-            actions = data["actions"]
-            dones = data["dones"]
+            rewards = self.set_device(data["rewards"])
+            actions = self.set_device(data["actions"])
+            dones = self.set_device(data["dones"])
 
             # estimate target values
             values_next = self.estimate_target_values(next_states)
@@ -72,8 +72,8 @@ class DQNTrainer(QLearningTrainer):
     def _train(self):
         """Train the q network"""
         for episode_num in range(self.cfg.TRAIN.NUM_EPISODES):
-            steps = self.run_single_episode(episode_num)
-            self.steps_history.append(steps)
+            rewards = self.run_single_episode(episode_num)
+            self.rewards_history.append(rewards)
 
             # update the q_net (experience replay)
             if (
@@ -87,6 +87,9 @@ class DQNTrainer(QLearningTrainer):
 
             if episode_num % self.cfg.TRAIN.VERBOSE_INTERVAL == 0:
                 self.log_info(episode_num)
+
+            if (episode_num > 0) and (episode_num % self.cfg.LOGGER.SAVE_MODEL_INTERVAL == 0):
+                self._save_model(self.q_net, suffix=str(episode_num))
 
             if self.early_stopping_condition():
                 break

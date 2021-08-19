@@ -1,6 +1,6 @@
 import torch
 
-from ...dataset import BufferData
+from ...data import build_dataset
 from ..builder import TRAINERS
 from .base import QTrainer
 
@@ -11,47 +11,48 @@ class MCTrainer(QTrainer):
 
     def __init__(self, env, cfg):
         super(MCTrainer, self).__init__(env, cfg)
-        self.buffer = BufferData()
+        self.buffer = build_dataset(cfg)
 
     def run_single_episode(self, episode_num):
         """Run a single episode for episodic environment."""
-        steps = 0
+        rewards = 0.0
         done = False
         state = self.env.reset()
         e = self.e_greedy_linear_annealing(episode_num)
 
         while not done:
             self.q_net.eval()
-            action = self.q_net.predict_e_greedy(state, self.env, e)
+            action = self.q_net.predict_e_greedy(self.pipeline(state), self.env, e)
             next_state, reward, done, _ = self.env.step(action)
 
-            if done:
-                reward = self.cfg.ENV.REWARD_DONE
-            else:
-                reward = self.cfg.ENV.REWARD
+            # scale the reward
+            reward *= self.cfg.ENV.REWARD_SCALE
 
             # update the q_net
             self.buffer.stack((state, next_state, reward, action, done))
 
             # save data to the buffer
             state = next_state
-            steps += 1
+            rewards += reward / self.cfg.ENV.REWARD_SCALE
 
         # update the q_net using Monte-Carlo
         self.update()
         self.buffer.clear()
 
-        return steps
+        return rewards
 
     def _train(self):
         """Train the q network"""
         for episode_num in range(self.cfg.TRAIN.NUM_EPISODES):
-            steps = self.run_single_episode(episode_num)
-            self.steps_history.append(steps)
+            rewards = self.run_single_episode(episode_num)
+            self.rewards_history.append(rewards)
 
             if episode_num % self.cfg.TRAIN.VERBOSE_INTERVAL == 0:
                 self.log_info(episode_num)
 
+            if (episode_num > 0) and (episode_num % self.cfg.LOGGER.SAVE_MODEL_INTERVAL == 0):
+                self._save_model(self.q_net, suffix=str(episode_num))
+                
             if self.early_stopping_condition():
                 break
 
@@ -67,24 +68,13 @@ class MCTrainer(QTrainer):
             # total reward is the target value for the update
             G_t = reward + self.cfg.TRAIN.DISCOUNT_RATE * G_t
             target = torch.tensor(G_t, dtype=torch.float32)
+            target = self.set_device(target)
 
             # estimate action values q(s,a;\theta)
-            pred = self.q_net(state)[0][action]
+            pred = self.q_net(self.pipeline(state))[0][action]
             self.optimizer.zero_grad()
             loss = self.criterion(pred, target)
             loss.backward()
             self.optimizer.step()
             self.losses.append(float(loss.detach().data))
             self.global_iters += 1
-
-    def estimate_target_values(self, next_state):
-        """Estimate the target value based on SARSA.
-
-        A' <- Q(S', epsilon)
-        target <- R + gamma * Q(S',A')
-        """
-        self.q_net.eval()
-        next_action = self.q_net.predict_e_greedy(next_state, self.env, self.epsilon)
-        with torch.no_grad():
-            value_target = self.q_net(next_state)[0][next_action]
-        return value_target

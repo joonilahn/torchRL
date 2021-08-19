@@ -13,38 +13,39 @@ class SARSATrainer(QTrainer):
 
     def run_single_episode(self, episode_num):
         """Run a single episode for episodic environment."""
-        steps = 0
+        rewards = 0.0
         done = False
         state = self.env.reset()
         e = self.e_greedy_linear_annealing(episode_num)
 
         while not done:
             self.q_net.eval()
-            action = self.q_net.predict_e_greedy(state, self.env, e)
+            action = self.q_net.predict_e_greedy(self.pipeline(state), self.env, e)
             next_state, reward, done, _ = self.env.step(action)
 
-            if done:
-                reward = self.cfg.ENV.REWARD_DONE
-            else:
-                reward = self.cfg.ENV.REWARD
+            # scale the reward
+            reward *= self.cfg.ENV.REWARD_SCALE
 
             # update the q_net
             self.update(state, next_state, reward, action, done)
 
             # save data to the buffer
             state = next_state
-            steps += 1
+            rewards += reward / self.cfg.ENV.REWARD_SCALE
 
-        return steps
+        return rewards
 
     def _train(self):
         """Train the q network"""
         for episode_num in range(self.cfg.TRAIN.NUM_EPISODES):
-            steps = self.run_single_episode(episode_num)
-            self.steps_history.append(steps)
+            rewards = self.run_single_episode(episode_num)
+            self.rewards_history.append(rewards)
 
             if episode_num % self.cfg.TRAIN.VERBOSE_INTERVAL == 0:
                 self.log_info(episode_num)
+
+            if (episode_num > 0) and (episode_num % self.cfg.LOGGER.SAVE_MODEL_INTERVAL == 0):
+                self._save_model(self.q_net, suffix=str(episode_num))
 
             if self.early_stopping_condition():
                 break
@@ -52,7 +53,7 @@ class SARSATrainer(QTrainer):
     def update(self, state, next_state, reward, action, done):
         """Update (train) the network."""
         # estimate target values
-        value_next = self.estimate_target_values(next_state)
+        value_next = self.estimate_target_values(self.pipeline(next_state))
         target = reward + self.cfg.TRAIN.DISCOUNT_RATE * value_next * ~done
 
         # estimate action values q(s,a;\theta)

@@ -1,4 +1,4 @@
-from .builder import build_Qnet, build_Vnet
-from .nn import ActionValueMLP, DuelingMLP, ActorCriticMLP
+from .builder import build_Qnet, build_Vnet, build_ActorCritic
+from .nn import ActionValueMLP, DuelingMLP, ActorCriticMLP, SmallCNN
 
-__all__ = ["build_Qnet", "build_Vnet", "ActionValueMLP", "DuelingMLP", "ActorCriticMLP", "build_Qnet"]
+__all__ = ["build_Qnet", "build_Vnet", "build_ActorCritic", "ActionValueMLP", "DuelingMLP", "ActorCriticMLP", "SmallCNN", "build_Qnet"]

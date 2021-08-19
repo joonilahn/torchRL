@@ -24,7 +24,7 @@ def train(cfg, env, args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, help="yaml config file.")
+    parser.add_argument("config", type=str, help="yaml config file.")
     parser.add_argument(
         "--show-plot",
         action="store_true",
@@ -36,12 +36,8 @@ if __name__ == "__main__":
     cfg = get_cfg_defaults()
     cfg.merge_from_file(args.config)
 
-    gym.register(
-        id=cfg.ENV.NAME,
-        entry_point="gym.envs.classic_control:CartPoleEnv",
-        max_episode_steps=cfg.ENV.MAX_EPISODE_STEPS,
-    )
     env = gym.make(cfg.ENV.NAME)
+    env.max_episode_steps = cfg.ENV.MAX_EPISODE_STEPS
 
     cfg.NET.STATE_DIM = env.observation_space.shape[0]
     cfg.NET.ACTION_DIM = env.action_space.n

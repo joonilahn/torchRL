@@ -6,8 +6,11 @@ PyTorch Implementations of basic Reinforcement Learning algorithms.
 
 * You can easily set up hyper-parameters for training by adjusting yaml-formatted config files.
 
-* Default environment is OpenAI gym's "CartPole-v3".
+* The code can be used with OpenAI gym environments.
 
+* Support "Cartpole-v1". Atari games will be supported soon.
+
+<p align="center"><img src="./cartpole_duelingdqn_210819_episode_last_result.gif" width="400" height="300"/>
 
 ## Algorithms
 1. SARSA
@@ -34,5 +37,15 @@ Check some examples in [configs](configs) folder.
 To train, 
 ```bash
 # e.g.
-python train.py --config {config file}
+python train_cartpole.py {config file}
+```
+
+To see how the trained network works, 
+```bash
+python demo_cartpole.py {config file} {weight file}
+```
+
+If you want to save the result as a gif file (for cartpole), use --save flag.
+```bash
+python demo_cartpole.py {config file} {weight file} --save
 ```
