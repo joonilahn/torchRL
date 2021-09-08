@@ -1,6 +1,14 @@
+from .actor_critic import ActorCriticCNN, ActorCriticMLP
+from .conv import DQN, BaseDQN
+from .dueling import DuelingDQN, DuelingMLP
 from .mlp import ActionValueMLP
-from .dueling import DuelingMLP
-from .actor_critic import ActorCriticMLP
-from .conv import SmallCNN
 
-__all__ = ["ActionValueMLP", "DuelingMLP", "ActorCriticMLP", "SmallCNN"]
+__all__ = [
+    "ActionValueMLP",
+    "DuelingMLP",
+    "DuelingMLP",
+    "ActorCriticMLP",
+    "ActorCriticCNN",
+    "DQN",
+    "BaseDQN",
+]

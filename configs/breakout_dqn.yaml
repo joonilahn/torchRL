@@ -4,7 +4,7 @@ ENV:
   NAME: "BreakoutDeterministic-v4"
 
 TRAIN:
-  TRAINER: "DDQNTrainer"
+  TRAINER: "DQNTrainer"
   VERBOSE_INTERVAL: 1
 
 DATASET:
@@ -14,6 +14,6 @@ LOGGER:
   LOG_FILE: True
   SAVE_MODEL: True
   SAVE_MODEL_INTERVAL: 100
-  OUTPUT_DIR: "./work_dir/breakout_ddqn_210907"
-  LOG_NAME: "breakout_ddqn_210907"
+  OUTPUT_DIR: "./work_dir/breakout_dqn_210907"
+  LOG_NAME: "breakout_dqn_210907"
   

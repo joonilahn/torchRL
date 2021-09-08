@@ -1,0 +1,32 @@
+NET:
+  NAME: "ActorCriticMLP"
+  NUM_LAYERS: 1
+  ACTION_DIM: 5
+  STATE_DIM: 10
+  HIDDEN_DIM: 128
+
+ENV:
+  NAME: "CustomersVisit-v0"
+  REWARD_SCALE: 1.0
+  MAX_EPISODE_STEPS: 100
+
+TRAIN:
+  TRAINER: "ActorCriticTrainer"
+  VERBOSE_INTERVAL: 10
+  TRAIN_INTERVAL: 1
+  NUM_ITERS_PER_TRAIN: 20
+  DISCOUNT_RATE: 0.99
+  AVG_REWARDS_TO_TERMINATE: 99
+
+OPTIMIZER:
+  ARGS:
+    lr: 0.001
+  
+LOSS_FN:
+  TYPE: "SmoothL1Loss"
+
+LOGGER:
+  LOG_FILE: False
+  SAVE_MODEL: False
+  LOG_NAME: "customers_actor_critic_210908"
+  

@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from ..builder import NETS
 
@@ -27,15 +26,15 @@ class ActionValueMLP(nn.Module):
         if not isinstance(state, torch.Tensor):
             state = self._to_tensor(state)
         with torch.no_grad():
-            actions = self.forward(state)
-        return int(actions.argmax(1)[0])
+            q_values = self.forward(state)
+        q_value, action = q_values.max(1)
+        return int(action), float(q_value)
 
     def predict_e_greedy(self, state, env, e):
-        if np.random.rand() > e:
-            action = self.predict(state)
-        else:
+        action, q_value = self.predict(state)
+        if np.random.rand() < e:
             action = env.action_space.sample()
-        return action
+        return action, q_value
 
     def copy_parameters(self, model):
         self.load_state_dict(model.state_dict())

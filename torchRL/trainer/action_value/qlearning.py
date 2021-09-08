@@ -17,5 +17,5 @@ class QLearningTrainer(SARSATrainer):
         target <- R + gamma * max_a_Q(S',a)
         """
         with torch.no_grad():
-            value_target = self.q_net(next_state).max(1)[0]
+            value_target = self.net(next_state).max(1)[0]
         return value_target

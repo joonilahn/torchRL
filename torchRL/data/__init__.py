@@ -1,5 +1,27 @@
-from .datasets import BufferDataset, BufferImageDataset
-from .pipelines import BottomCrop
-from .builder import build_pipeline, build_dataset
+from .builder import build_dataset, build_pipeline
+from .datasets import BufferDataset, BufferFramesDataset
+from .pipelines import (
+    BottomCrop,
+    Grayscale,
+    Normalize,
+    Resize,
+    ToArray,
+    ToCuda,
+    ToPILImage,
+    ToTensor,
+    TransformAtariInput,
+)
 
-__all__ = ["BufferDataset", "BottomCrop"]
+__all__ = [
+    "BufferDataset",
+    "BufferFramesDataset",
+    "BottomCrop",
+    "Grayscale",
+    "Normalize",
+    "Resize",
+    "ToArray",
+    "ToCuda",
+    "ToPILImage",
+    "ToTensor",
+    "TransformAtariInput",
+]

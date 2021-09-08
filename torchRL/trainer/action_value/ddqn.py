@@ -20,8 +20,10 @@ class DDQNTrainer(DQNTrainer):
         """
         with torch.no_grad():
             # choose actions of the next states based on the target net argmaxQ(s',a;\theta)
-            actions_next = self.q_target(next_states).argmax(1).unsqueeze(-1)
+            actions_next = self.target_net(next_states).argmax(1).unsqueeze(-1)
+
             # estimate the next action values q(s',a';\theta^-)
-            values_target = self.q_net(next_states).gather(1, actions_next).squeeze(-1)
+            with torch.no_grad():
+                values_target = self.net(next_states).gather(1, actions_next).squeeze(-1)
 
         return values_target

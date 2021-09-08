@@ -1,50 +1,66 @@
-from torchRL.data.pipelines.transforms import ToTensor
 from yacs.config import CfgNode as CN
 
 _C = CN()
 _C.USE_GPU = False
 
 _C.NET = CN()
-_C.NET.NAME = "SmallCNN"
-_C.NET.HIDDEN_DIM = 256
+_C.NET.NAME = "DQN"
+_C.NET.HIDDEN_DIM = 512
 _C.NET.ACTION_DIM = 4
+_C.NET.STATE_DIM = 84  # first dimension of the input
 
 _C.ENV = CN()
-_C.ENV.NAME = "BreakoutNoFrameskip-v4"
+_C.ENV.NAME = "BreakoutDeterministic-v4"
+_C.ENV.TYPE = "Atari"
 _C.ENV.MAX_EPISODE_STEPS = 10000
 _C.ENV.REWARD_SCALE = 1.0
 
 _C.TRAIN = CN()
 _C.TRAIN.TRAINER = ""
-_C.TRAIN.LEARNING_RATE = 0.0003
+_C.TRAIN.NUM_EPISODES = 2000000
+_C.TRAIN.TRAIN_BY_EPISODE = False  # if False, train will be based on global iteration number
 _C.TRAIN.BATCH_SIZE = 32
-_C.TRAIN.TRAIN_INTERVAL = 10
-_C.TRAIN.NUM_ITERS_PER_TRAIN = 50
+_C.TRAIN.START_TRAIN = 50000
+_C.TRAIN.TRAIN_INTERVAL = 4
+_C.TRAIN.NUM_ITERS_PER_TRAIN = 1
 _C.TRAIN.DISCOUNT_RATE = 0.99
-_C.TRAIN.NUM_EPISODES = 10000
 _C.TRAIN.VERBOSE_INTERVAL = 10
-_C.TRAIN.TARGET_SYNC_INTERVAL = 100
-_C.TRAIN.AVERAGE_SIZE = 10
-_C.TRAIN.AVG_REWARDS_TO_TERMINATE = 5000
-_C.TRAIN.EPSILON_GREEDY_MINMAX = (0.01, 0.08)
-_C.TRAIN.STOP_DECAY_EPSILON = 2000
+_C.TRAIN.TARGET_SYNC_INTERVAL = 10000
+_C.TRAIN.HISTORY_SIZE = 100
+_C.TRAIN.AVG_REWARDS_TO_TERMINATE = 200
+_C.TRAIN.PRETRAINED = ""
+
+# For algorithms using epsilon greedy exploration
+_C.SCHEDULER = CN()
+_C.SCHEDULER.TYPE = "LinearAnnealingScheduler"
+_C.SCHEDULER.EPSILON_GREEDY_MINMAX = (0.1, 1.0)
+_C.SCHEDULER.DECAY_PERIOD = (50000, 1000000)
+
+_C.OPTIMIZER = CN()
+_C.OPTIMIZER.TYPE = "Adam"
+_C.OPTIMIZER.CLIP_GRAD = False
+_C.OPTIMIZER.CLIP_GRAD_VALUE = 1.0
+_C.OPTIMIZER.ARGS = CN(new_allowed=True)
+_C.OPTIMIZER.ARGS.lr =  0.0001
+
+_C.LOSS_FN = CN()
+_C.LOSS_FN.TYPE = "SmoothL1Loss"
+_C.LOSS_FN.ARGS = CN(new_allowed=True)
 
 _C.DATASET = CN()
 _C.DATASET.USE_GPU = _C.USE_GPU
-_C.DATASET.TYPE = "BufferImageDataset"
+_C.DATASET.TYPE = "BufferFramesDataset"
 _C.DATASET.BUFFER_SIZE = 50000
-_C.DATASET.PIPELINES = ["ToPILImage", "Grayscale", "Resize", "BottomCrop", "ToTensor", "Normalize", "ToDevice"]
-_C.DATASET.PIL_MODE = ""
-_C.DATASET.RESIZE = [110, 84]  # (h, w)
-_C.DATASET.MEAN = [0.2,]
-_C.DATASET.STD = [0.23,]
+_C.DATASET.PIPELINES = ["TransformAtariInput", "ToTensor", "ToCuda"]
 
 _C.LOGGER = CN()
-_C.LOGGER.OUTPUT_DIR = "./output"
-_C.LOGGER.LOG_NAME = ""
-_C.LOGGER.LOG_FILE = False
-_C.LOGGER.SAVE_MODEL = False
-_C.LOGGER.SAVE_MODEL_INTERVAL = 1000
+_C.LOGGER.OUTPUT_DIR = "./work_dir"
+_C.LOGGER.LOG_NAME = "breakout"
+_C.LOGGER.LOG_FILE = True
+_C.LOGGER.LOG_TENSORBOARD = True
+_C.LOGGER.SAVE_MODEL = True
+_C.LOGGER.SAVE_MODEL_INTERVAL = 10000
+
 
 def get_cfg_defaults():
     return _C.clone()

@@ -9,8 +9,11 @@ if __name__ == "__main__":
         packages=find_packages(),
         install_requires=[
             "torch>=1.6.0",
+            "tensorboard",
             "numpy",
-            "gym",
+            "gym==0.17.0",
+            "atari-py==0.2.5",
+            "pyglet==1.5.11",
             "yacs",
         ],
     )

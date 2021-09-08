@@ -1,3 +1,3 @@
-from .buffer import BufferDataset, BufferImageDataset
+from .buffer import BufferDataset, BufferFramesDataset
 
-__all__ = ["BufferDataset", "BufferImageDataset"]
+__all__ = ["BufferDataset", "BufferFramesDataset"]

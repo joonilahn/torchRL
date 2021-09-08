@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 
 from .mlp import build_mlp
+from .conv import DQN, BaseDQN
 from ..builder import NETS
 
 
@@ -38,3 +39,30 @@ class ActorCriticMLP(nn.Module):
 
     def _to_tensor(self, x):
         return torch.tensor(x, dtype=torch.float32).unsqueeze(0)
+
+
+@NETS.register_module()
+class ActorCriticCNN(BaseDQN):    
+    def __init__(self, action_dim=4, hidden_dim=512, in_channels=4):
+        super(ActorCriticCNN, self).__init__(
+            action_dim=action_dim, hidden_dim=hidden_dim, in_channels=in_channels
+        )
+
+        self.actor_layer = DQN(action_dim=action_dim, hidden_dim=hidden_dim, in_channels=in_channels)
+        self.critic_layer = DQN(action_dim=1, hidden_dim=hidden_dim, in_channels=in_channels)
+
+    def forward(self, states):
+        return self.forward_actor(states)
+
+    def forward_actor(self, states):
+        return F.softmax(self.actor_layer(states), dim=-1)
+    
+    def forward_critic(self, states):
+        return self.critic_layer(states)
+
+    def predict(self, state):
+        state = self.actor_layer.conditional_unsqueeze(state)
+        with torch.no_grad():
+            probs = self.forward_actor(state)
+        action = Categorical(probs).sample().item()
+        return action

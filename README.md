@@ -8,9 +8,9 @@ PyTorch Implementations of basic Reinforcement Learning algorithms.
 
 * The code can be used with OpenAI gym environments.
 
-* Support "Cartpole-v1". Atari games will be supported soon.
+* Tested on "CartPole-v1", "BreakoutDeterministic-v4" and "SpaceInvadersDeterministic-v4" settings.
 
-<p align="center"><img src="./cartpole_duelingdqn_210819_episode_last_result.gif" width="400" height="300"/>
+<p align="center"><img src="./anim/cartpole_result.gif" width="400" height="300"/>
 
 ## Algorithms
 1. SARSA
@@ -36,8 +36,11 @@ Check some examples in [configs](configs) folder.
 
 To train, 
 ```bash
-# e.g.
-python train_cartpole.py {config file}
+# For Classic Control problems (CartPole)
+python train_classicControl.py {config file}
+
+# For Atari games
+python train_atari.py {config file}
 ```
 
 To see how the trained network works, 

@@ -10,7 +10,7 @@ from torchRL.configs.cartpole_defaults import get_cfg_defaults
 from torchRL.net import build_Qnet
 
 
-def display_frames_as_gif(frames, save=False, save_name="cartpole_result.gif"):
+def save_frames_as_gif(frames, save=False, save_name="cartpole_result.gif"):
     """Displays a list of frames as a gif, with controls"""
     plt.figure(figsize=(frames[0].shape[1] / 72.0, frames[0].shape[0] / 72.0), dpi=72)
     patch = plt.imshow(frames[0])
@@ -73,4 +73,4 @@ if __name__ == "__main__":
 
     # display animation
     save_name = args.weight.split('.')[0] + '_result.gif'
-    display_frames_as_gif(frames, args.save, save_name=save_name)
+    save_frames_as_gif(frames, args.save, save_name=save_name)

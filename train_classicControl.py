@@ -1,15 +1,21 @@
 import argparse
+import os.path as osp
 
-import gym
 import matplotlib.pyplot as plt
 
-from torchRL.configs.breakout_defaults import get_cfg_defaults
+from torchRL.configs.cartpole_defaults import get_cfg_defaults
+from torchRL.env import EnvWrapper
 from torchRL.trainer import build_trainer
 
 
 def train(cfg, env, args):
     # train
     trainer = build_trainer(env, cfg)
+    
+    # copy the config file
+    with open(f"{cfg.LOGGER.OUTPUT_DIR}/{osp.basename(args.config)}", "w") as f:
+        f.write(cfg.dump())
+
     trainer.train()
     if args.show_plot:
         fig, axs = plt.subplots(2)
@@ -36,8 +42,8 @@ if __name__ == "__main__":
     cfg = get_cfg_defaults()
     cfg.merge_from_file(args.config)
 
-    env = gym.make(cfg.ENV.NAME)
-    env.max_episode_steps = cfg.ENV.MAX_EPISODE_STEPS
+    # make environmemnt
+    env = EnvWrapper(cfg.ENV)
 
     cfg.NET.STATE_DIM = env.observation_space.shape[0]
     cfg.NET.ACTION_DIM = env.action_space.n

@@ -4,4 +4,5 @@ __pycache__/
 torchRL.egg-info
 .DS_Store
 output/
+work_dir/
 notebooks
