@@ -10,6 +10,8 @@ from .pipelines import (
     ToPILImage,
     ToTensor,
     TransformAtariInput,
+    get_init_state,
+    to_grayscale_and_resize
 )
 
 __all__ = [
@@ -24,4 +26,7 @@ __all__ = [
     "ToPILImage",
     "ToTensor",
     "TransformAtariInput",
+    "get_init_state",
+    "to_grayscale_and_resize",
+    "build_pipeline"
 ]

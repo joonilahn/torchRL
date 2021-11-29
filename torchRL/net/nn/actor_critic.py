@@ -32,13 +32,58 @@ class ActorCriticMLP(nn.Module):
             states = self._to_tensor(states)
         return self.critic_layer(states)
 
-    def predict(self, state):
+    def predict(self, state, num_output=1):
         probs =  self.forward_actor(state)
-        action = Categorical(probs).sample().item()
+        if num_output > 1:
+            action = torch.multinomial(probs, num_output)[0].tolist()
+        elif num_output == 1:
+            action = Categorical(probs).sample().item()
+        else:
+            raise ValueError
+
         return action
+
+    def estimate_values(self, states, actions=None):
+        return self.forward_critic(states)
 
     def _to_tensor(self, x):
         return torch.tensor(x, dtype=torch.float32).unsqueeze(0)
+
+
+@NETS.register_module()
+class QValueActorCriticMLP(ActorCriticMLP):
+    def __init__(self, state_dim=4, action_dim=2, hidden_dim=128, num_layers=2):
+        super(QValueActorCriticMLP, self).__init__(
+            state_dim=state_dim,
+            action_dim=action_dim,
+            hidden_dim=hidden_dim,
+            num_layers=num_layers
+        )
+        self.critic_layer = build_mlp(num_layers, state_dim, hidden_dim, action_dim)
+
+    def forward_critic(self, states):
+        if not isinstance(states, torch.Tensor):
+            states = self._to_tensor(states)
+        return self.critic_layer(states)
+
+    def estimate_values(self, states, actions):
+        if isinstance(actions, int):
+            action_values = self.forward_critic(states)[0, actions].reshape([-1, 1])
+        else:
+            action_values = self.forward_critic(states).gather(1, actions).squeeze(-1)
+        return action_values
+
+
+@NETS.register_module()
+class AdvantageActorCriticMLP(ActorCriticMLP):
+    def __init__(self, state_dim=4, action_dim=2, hidden_dim=128, num_layers=2):
+        super(AdvantageActorCriticMLP, self).__init__(
+            state_dim=state_dim,
+            action_dim=action_dim,
+            hidden_dim=hidden_dim,
+            num_layers=num_layers
+        )
+        self.q_func = build_mlp(num_layers, state_dim, hidden_dim, action_dim)
 
 
 @NETS.register_module()
@@ -50,6 +95,7 @@ class ActorCriticCNN(BaseDQN):
 
         self.actor_layer = DQN(action_dim=action_dim, hidden_dim=hidden_dim, in_channels=in_channels)
         self.critic_layer = DQN(action_dim=1, hidden_dim=hidden_dim, in_channels=in_channels)
+        self._init_params()
 
     def forward(self, states):
         return self.forward_actor(states)
@@ -66,3 +112,6 @@ class ActorCriticCNN(BaseDQN):
             probs = self.forward_actor(state)
         action = Categorical(probs).sample().item()
         return action
+
+    def estimate_values(self, states, actions=None):
+        return self.forward_critic(states)

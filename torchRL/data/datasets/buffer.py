@@ -1,6 +1,7 @@
 import random
 from collections import deque
 
+import numpy as np
 import torch
 
 from ..builder import DATASETS, build_pipeline
@@ -30,8 +31,16 @@ class BufferDataset:
             actions.append(sample[3])
             dones.append(sample[4])
 
-        states = torch.tensor(states, dtype=torch.float32)
-        next_states = torch.tensor(next_states, dtype=torch.float32)
+        if isinstance(states[0], np.ndarray):
+            states = torch.tensor(np.array(states), dtype=torch.float32)
+        else:
+            states = torch.stack(states, dim=0).reshape(size, -1)
+
+        if isinstance(next_states[0], np.ndarray):
+            next_states = torch.tensor(np.array(next_states), dtype=torch.float32)
+        else:
+            next_states = torch.stack(next_states, dim=0).reshape(size, -1)
+
         rewards = torch.tensor(rewards, dtype=torch.float32)
         actions = torch.tensor(actions, dtype=torch.int64).unsqueeze(1)
         dones = torch.tensor(dones, dtype=torch.int8)
@@ -74,7 +83,7 @@ class BufferFramesDataset(BufferDataset):
         dones = []
 
         for sample in samples:
-            states.append(self.pipeline(sample[0][:, :,  :4]))
+            states.append(self.pipeline(sample[0][:, :, :4]))
             next_states.append(self.pipeline(sample[0][:, :, 1:]))
             rewards.append(sample[1])
             actions.append(sample[2])

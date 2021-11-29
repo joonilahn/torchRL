@@ -4,7 +4,7 @@ NET:
   HIDDEN_DIM: 128
 
 TRAIN:
-  TRAINER: "ActorCriticTrainer"
+  TRAINER: "TDActorCriticTrainer"
   VERBOSE_INTERVAL: 20
   TRAIN_INTERVAL: 1
   NUM_ITERS_PER_TRAIN: 1
@@ -19,5 +19,6 @@ LOSS_FN:
 LOGGER:
   LOG_FILE: False
   SAVE_MODEL: False
+  OUTPUT_DIR: "work_dir/cartpole_actor_critic_210813"
   LOG_NAME: "cartpole_actor_critic_210813"
   

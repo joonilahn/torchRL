@@ -14,13 +14,13 @@ PyTorch Implementations of basic Reinforcement Learning algorithms.
 
 ## Algorithms
 1. SARSA
-4. Q-Learning
-5. [DQN](https://arxiv.org/abs/1312.5602) (Playing Atari with Deep Reinforcement Learning)
-6. [DDQN](https://arxiv.org/abs/1509.06461) (Deep Reinforcement Learning with Double Q-learning
+2. Vanilla Q-Learning
+3. [DQN](https://arxiv.org/abs/1312.5602) (Playing Atari with Deep Reinforcement Learning)
+4. [DDQN](https://arxiv.org/abs/1509.06461) (Deep Reinforcement Learning with Double Q-learning
 )
-7. [Dueling DQN](https://arxiv.org/abs/1511.06581) (Dueling Network Architectures for Deep Reinforcement Learning
+5. [Dueling DQN](https://arxiv.org/abs/1511.06581) (Dueling Network Architectures for Deep Reinforcement Learning
 )
-8. Actor-Critic (Actor-Critic Policy)
+6. Actor-Critic (TD)
 
 ## Dependencies
 1. PyTorch (This package was tested on cpu version of PyTorch v1.9. But chances are you'll be fine with most of older versions of PyTorch!)

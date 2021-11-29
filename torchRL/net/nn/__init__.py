@@ -1,4 +1,4 @@
-from .actor_critic import ActorCriticCNN, ActorCriticMLP
+from .actor_critic import ActorCriticCNN, ActorCriticMLP, AdvantageActorCriticMLP, QValueActorCriticMLP
 from .conv import DQN, BaseDQN
 from .dueling import DuelingDQN, DuelingMLP
 from .mlp import ActionValueMLP
@@ -6,9 +6,8 @@ from .mlp import ActionValueMLP
 __all__ = [
     "ActionValueMLP",
     "DuelingMLP",
-    "DuelingMLP",
+    "DuelingDQN",
     "ActorCriticMLP",
     "ActorCriticCNN",
     "DQN",
-    "BaseDQN",
 ]

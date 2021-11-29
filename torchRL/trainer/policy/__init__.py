@@ -1,3 +1,5 @@
-from .actor_critic import ActorCriticTrainer
+from .actor_critic import TDActorCriticTrainer
+from .base import BasePolicyGradientTrainer
+from .reinforce import REINFORCETrainer
 
-__all__ = ["ActorCriticTrainer"]
+__all__ = ["TDActorCriticTrainer", "BasePolicyGradientTrainer", "REINFORCETrainer"]

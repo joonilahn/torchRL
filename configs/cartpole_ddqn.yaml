@@ -11,5 +11,6 @@ TRAIN:
 LOGGER:
   LOG_FILE: True
   SAVE_MODEL: True
+  OUTPUT_DIR: "work_dir/cartpole_ddqn_210819"
   LOG_NAME: "cartpole_ddqn_210819"
   

@@ -7,48 +7,57 @@ import torch
 
 from ..data import build_pipeline
 from ..data.pipelines import to_grayscale_and_resize
-from ..env import EnvWrapper
+from ..env import DiscreteList, EnvWrapper
 from ..net import build_Qnet
 
 class Evaluator:
-    def __init__(self, cfg, weight=None, seed=42):
+    def __init__(self, cfg, agent=None, weight=None, pipeline=None):
         self.cfg = cfg
-        self.pipeline = build_pipeline(cfg.DATASET)
-        self.agent = build_Qnet(cfg.NET)
+        self.pipeline = pipeline if pipeline else build_pipeline(cfg.DATASET)
+        self.agent = agent if agent else build_Qnet(cfg.NET)
         if weight:
             self.agent.load_state_dict(torch.load(weight))
+            print("Loaded pretrained weight.")
         if cfg.USE_GPU:
             self.agent.cuda()
         self.env = EnvWrapper(cfg.ENV)
-        self.env.seed(seed)
 
         self.game_has_life = True
         self.curr_lives = 0
         self.reward_all = []
         self.best_frames = []
         self.best_reward = -np.inf
+        self.num_output = self.env.action_space.num_out if isinstance(self.env.action_space, DiscreteList) else 1
 
-    def evaluate(self, num_eval=30, e=0.05):
+    def evaluate(self, num_eval=30, e=0.05, verbose=False, verbose_interval=100):
+        self.reward_all = []
+
         for i in range(num_eval):
             reward_total = 0
             reward_per_life = 0
             done = False
+            done_life = True
             state_init = self.env.reset()
             state = state_init
             frames = []
-            e = e
             steps = 0
 
             while not done:
                 steps += 1
 
                 # get action (e-greedy)
-                action = self.agent.predict_e_greedy(self.pipeline(state), self.env, e)[0]
-
+                try:
+                    action = self.agent.predict_e_greedy(self.pipeline(state), self.env, e, num_output=self.num_output)[0]
+                except:
+                    action = self.agent.predict(self.pipeline(state), num_output=self.num_output)
+                    
                 # take the action (step)
                 next_state, reward, done, lives = self.env.env.step(action)
                 frames.append(next_state)
-                next_state = to_grayscale_and_resize(next_state)
+
+                # save frame
+                if self.cfg.ENV.TYPE == "Atari":
+                    next_state = to_grayscale_and_resize(next_state)
 
                 # For Atari, stack the next state to the current states
                 if self.cfg.ENV.TYPE == "Atari":
@@ -60,6 +69,7 @@ class Evaluator:
                 # check whether game's life has changed
                 if (steps == 1) and (self.cfg.ENV.TYPE == "Atari"):
                     self.set_init_lives(lives)
+                    done_life = self.is_done_for_life(lives, reward)
                 
                 # set the current state to the next state (state <- next_state)
                 if self.cfg.ENV.TYPE == "Atari":
@@ -68,7 +78,13 @@ class Evaluator:
                     )
                 else:
                     state = next_state
-                
+
+            if (verbose) and (steps % verbose_interval == 0):
+                print(f"Steps: {steps}")
+
+            if steps == self.env.env.__max_episode_steps:
+                break
+
             if reward_total > self.best_reward:
                 self.best_frames = frames
                 self.best_reward = reward_total
@@ -77,19 +93,11 @@ class Evaluator:
 
         print(f"Average reward after {num_eval} evaluation: {np.mean(self.reward_all):.2f}")
 
-    def save_frames_as_gif(self, out=None, frames=None, fps=60, writer="pillow"):
-        """Saves a list of frames as a gif"""
+    def make_animation(self, one=None, frames=None, fps=60):
+        """make animation"""
         if frames is None:
             frames = self.best_frames
-        if out is None:
-            env_name = (
-                self.cfg.ENV.NAME.split('-')[0]
-                .replace("Deterministic", "")
-                .replace("NoFrameskip", "")
-            )
-            trainer = self.cfg.TRAIN.TRAINER.lower().replace("trainer", "")
-            out = f"{env_name}_{trainer}_{int(self.best_reward)}"
-        
+        plt.ioff()
         fig = plt.figure(figsize=(3, 4))
         fig.set_tight_layout(True)
         patch = plt.imshow(frames[0])
@@ -101,7 +109,26 @@ class Evaluator:
         anim = animation.FuncAnimation(
             fig, animate, frames=len(frames), interval=int(1000 / fps)
         )
-        anim.save(f"{out}.gif", writer=writer, fps=fps)
+        plt.ion()
+           
+        return anim
+        
+    def save_animation(self, anim=None, out=None, frames=None, fps=60):
+        """Saves a list of frames as a gif"""
+        if out is None:
+            env_name = (
+                self.cfg.ENV.NAME.split('-')[0]
+                .replace("Deterministic", "")
+                .replace("NoFrameskip", "")
+            )
+            trainer = self.cfg.TRAIN.TRAINER.lower().replace("trainer", "")
+            out = f"{env_name}_{trainer}_{int(self.best_reward)}"
+
+        if anim is None:
+            anim = self.make_animation(frames=frames, fps=fps)
+        
+        anim.save(f"{out}.gif", writer="pillow", fps=fps)
+        print(f"Saved {out}!")
     
     def set_init_lives(self, lives):
         self.curr_lives = lives.get("ale.lives", None)
@@ -129,3 +156,7 @@ class Evaluator:
                 done = False
         
         return done
+
+    def load_pretrained(self, weight):
+        self.agent.load_state_dict(torch.load(weight))
+        print("Load pretrained weight.")

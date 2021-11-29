@@ -43,6 +43,9 @@ class DuelingDQN(BaseDQN):
         self.value_fn = nn.Linear(hidden_dim, 1)
         self.advantage_fn = nn.Linear(hidden_dim, self.action_dim)
 
+        # init parameters
+        self._init_params()
+
     def forward(self, x):
         x = self.cnn(x)
         feats_a, feats_v = torch.split(x, self.hidden_dim, 1)

@@ -71,8 +71,10 @@ class DQN(BaseDQN):
         q_value, action = q_values.max(1)
         return int(action), float(q_value)
 
-    def predict_e_greedy(self, state, env, e):
+    def predict_e_greedy(self, state, env, e, num_output=1):
         action, q_value = self.predict(state)
         if np.random.rand() < e:
             action = env.action_space.sample()
+            if num_output == 1 and isinstance(action, list):
+                action = action[0]
         return action, q_value

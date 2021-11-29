@@ -21,4 +21,5 @@ OPTIMIZER:
 LOGGER:
   LOG_FILE: True
   SAVE_MODEL: False
+  OUTPUT_DIR: "work_dir/cartpole_qlearning_210813"
   LOG_NAME: "cartpole_qlearning_210813"

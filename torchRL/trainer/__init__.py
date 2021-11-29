@@ -5,7 +5,7 @@ from .action_value import (
     DQNTrainer,
     DDQNTrainer,
 )
-from .policy import ActorCriticTrainer
+from .policy import TDActorCriticTrainer
 from .builder import build_trainer
 from .base import BaseTrainer
 
@@ -16,5 +16,6 @@ __all__ = [
     "QLearningTrainer",
     "DQNTrainer",
     "DDQNTrainer",
-    "ActorCriticTrainer",
+    "TDActorCriticTrainer",
+    "build_trainer"
 ]

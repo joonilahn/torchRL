@@ -12,4 +12,6 @@ __all__ = [
     "ToPILImage",
     "ToTensor",
     "TransformAtariInput",
+    "get_init_state",
+    "to_grayscale_and_resize"
 ]

@@ -27,7 +27,12 @@ class Resize:
             raise TypeError("Size must be either list or tuple.")
 
     def __call__(self, img):
-        return F.resize(img, self.size)
+        if isinstance(img, Image.Image):
+            return F.resize(img, self.size)
+        elif isinstance(img, np.ndarray):
+            return cv2.resize(img, self.size)
+        else:
+            raise TypeError("Input should be PIL Image or numpy.ndarray")
 
 
 @PIPELINES.register_module()
@@ -36,7 +41,12 @@ class Grayscale:
         pass
 
     def __call__(self, img):
-        return F.to_grayscale(img, num_output_channels=1)
+        if isinstance(img, Image.Image):
+            return F.to_grayscale(img, num_output_channels=1)
+        elif isinstance(img, np.ndarray):
+            return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        else:
+            raise TypeError("Input should be PIL Image or numpy.ndarray")
 
 
 @PIPELINES.register_module()
@@ -55,7 +65,10 @@ class ToTensor:
         pass
 
     def __call__(self, img):
-        return F.to_tensor(img)
+        if len(img.shape) == 1:
+            return torch.tensor(img, dtype=torch.float32).unsqueeze(0)
+        else:
+            return F.to_tensor(img)
 
 
 @PIPELINES.register_module()

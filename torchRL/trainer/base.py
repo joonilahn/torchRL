@@ -5,9 +5,11 @@ import numpy as np
 import torch
 from torch.nn.utils import clip_grad_norm_
 
-from ..data import build_pipeline
+from ..data import build_pipeline, to_grayscale_and_resize
+from ..env import EnvWrapper
 from ..loss import build_loss
 from ..utils import TensorboardLogger, get_logger
+
 from .builder import TRAINERS
 
 
@@ -19,6 +21,7 @@ class BaseTrainer:
         self.env = env
         self.cfg = cfg
         self.use_gpu = cfg.USE_GPU
+        self.net = None
         self.pipeline = build_pipeline(cfg.DATASET)
         self.criterion = build_loss(cfg.LOSS_FN)
         self.optimizer = None
@@ -37,6 +40,13 @@ class BaseTrainer:
         self.game_has_life = False
         self.curr_lives = 0
         self.best_avg_reward = -np.inf
+        self.num_output = cfg.ENV.get("NUM_OUTPUT", 1)
+
+        # for evaluation
+        if cfg.ENV.get("EVAL_DATA", '') != '':
+            self.env_eval = EnvWrapper(cfg.ENV, train_data=cfg.ENV.EVAL_DATA)
+        else:
+            self.env_eval = None
 
     def run_single_episode(self):
         """Run a single episode for episodic environment."""
@@ -51,12 +61,66 @@ class BaseTrainer:
         
         # close
         self.env.close()
+
         if self.tb_logger:
             self.tb_logger.close()
 
     def _train(self):
         """Train"""
         pass
+
+    def evaluate(self, e=0.0):
+        reward_total = 0
+        reward_per_life = 0
+        done = False
+        done_life = True
+        state_init = self.env_eval.reset()
+        state = state_init
+        steps = 0
+
+        while not done:
+            steps += 1
+
+            # get action (e-greedy)
+            try:
+                action = self.net.predict_e_greedy(self.pipeline(state), self.env, e, num_output=self.num_output)[
+                    0]
+            except:
+                action = self.net.predict(self.pipeline(state), num_output=self.num_output)
+
+            # take the action (step)
+            next_state, reward, done, lives = self.env_eval.env.step(action)
+
+            # save frame
+            if self.cfg.ENV.TYPE == "Atari":
+                next_state = to_grayscale_and_resize(next_state)
+
+            # For Atari, stack the next state to the current states
+            if self.cfg.ENV.TYPE == "Atari":
+                state[:, :, 4] = next_state
+
+            reward_total += reward
+            reward_per_life += reward
+
+            # check whether game's life has changed
+            if (steps == 1) and (self.cfg.ENV.TYPE == "Atari"):
+                self.set_init_lives(lives)
+                done_life = self.is_done_for_life(lives, reward)
+
+            # set the current state to the next state (state <- next_state)
+            if self.cfg.ENV.TYPE == "Atari":
+                state = np.concatenate(
+                    [state[:, :, 1:], np.expand_dims(next_state, axis=2)], axis=2
+                )
+            else:
+                state = next_state
+
+            if steps == self.env_eval.env.__max_episode_steps:
+                break
+
+        self.logger.info(f"Evaluation Reward: {reward_total}")
+        if self.tb_logger:
+            self.tb_logger.log_info("Eval Reward", reward_total, self.episode_num)
 
     def estimate_target_values(self, next_states):
         """Estimate target values using TD(0), MC, or TD(lambda)."""
@@ -123,9 +187,8 @@ class BaseTrainer:
             if is_first_msg:
                 log_msg += f"{k}: {parse_text_for_log(v)}"
                 is_first_msg = False
-            else:
-                log_msg += f", {k}: {parse_text_for_log(v)}"
-                
+
+            log_msg += f", {k}: {parse_text_for_log(v)}"
             if "time" in k:
                 log_msg += "s"
             
@@ -147,7 +210,7 @@ class BaseTrainer:
                 else f"frame_{self.frame_num}"
             )
 
-        # save new best checkpoint
+        # save new best checkpoints
         if "best" in suffix:
             suffix += f"_frame_{self.frame_num}"
             for f in os.listdir(self.cfg.LOGGER.OUTPUT_DIR):
@@ -168,6 +231,15 @@ class BaseTrainer:
         if self.use_gpu:
             return x.to(torch.device("cuda"))
         return x
+
+    def convert_input_type(self, x):
+        if isinstance(x, (int, float)):
+            x = torch.tensor([x], dtype=torch.float32)
+        elif isinstance(x, bool):
+            x = torch.tensor([int(x)], dtype=torch.int8)
+        else:
+            raise NotImplementedError
+        return self.set_device(x)
 
     def set_init_lives(self, lives):
         self.curr_lives = lives.get("ale.lives", None)

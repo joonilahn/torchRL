@@ -1,9 +1,9 @@
 NET:
   NAME: "ActorCriticMLP"
   NUM_LAYERS: 1
-  ACTION_DIM: 5
-  STATE_DIM: 10
-  HIDDEN_DIM: 128
+  ACTION_DIM: 30
+  STATE_DIM: 1000
+  HIDDEN_DIM: 1000
 
 ENV:
   NAME: "CustomersVisit-v0"
@@ -11,7 +11,7 @@ ENV:
   MAX_EPISODE_STEPS: 100
 
 TRAIN:
-  TRAINER: "ActorCriticTrainer"
+  TRAINER: "TDActorCriticTrainer"
   VERBOSE_INTERVAL: 10
   TRAIN_INTERVAL: 1
   NUM_ITERS_PER_TRAIN: 20
@@ -28,5 +28,6 @@ LOSS_FN:
 LOGGER:
   LOG_FILE: False
   SAVE_MODEL: False
+  OUTPUT_DIR: "work_dir/customers_actor_critic_210908"
   LOG_NAME: "customers_actor_critic_210908"
   

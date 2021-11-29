@@ -4,7 +4,7 @@ import numpy as np
 
 
 class EnvWrapper:
-    def __init__(self, cfg):
+    def __init__(self, cfg, **kwargs):
         self.type = cfg.TYPE
         if ("wrap" in self.type.lower()) and ("NoFrameskip" in cfg.NAME):
             from baselines.common.atari_wrappers import make_atari, wrap_deepmind
@@ -26,9 +26,9 @@ class EnvWrapper:
         next_state, reward, done, info = self.env.step(action)
         if self.prep_type == "multiframes" and preprocess:
             next_state = self.to_grayscale_and_resize(next_state)
-        return next_state, reward, done, info
+        return (next_state, reward, done, info)
     
-    def render(self, mode="humn"):
+    def render(self, mode="human"):
         self.env.render(mode=mode)
     
     def close(self):
@@ -51,6 +51,7 @@ class EnvWrapper:
         )
 
     def to_grayscale_and_resize(self, img, size=(84, 84)):
+        """Transform rgb image to grayscale and resize the image."""
         return cv2.resize(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)[34: 34 + 160, :], size)
     
     def seed(self, seed):

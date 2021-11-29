@@ -1,5 +1,4 @@
 import time
-from copy import deepcopy
 
 import numpy as np
 import torch
@@ -29,20 +28,22 @@ class SARSATrainer(QTrainer):
             self.steps += 1
             self.frame_num += 1
 
-            action, q_value = self.net.predict_e_greedy(self.pipeline(state), self.env, e)
+            action, q_value = self.net.predict_e_greedy(self.pipeline(state), self.env, e, num_output=self.num_output)
             self.q_values.append(q_value)
 
             # take the action
             next_state, reward, done, info = self.env.step(action)
+            if isinstance(action, list):
+                            action = action[0]
 
             # For Atari, stack the next state to the current states
             if self.cfg.ENV.TYPE == "Atari":
                 state[:, :, 4] = next_state
-            
-            # check whether game's life has changed
-            if (self.steps == 1) and (self.cfg.ENV.TYPE == "Atari"):
-                self.set_init_lives(info)
-            done_life = self.is_done_for_life(info, reward)
+
+                # check whether game's life has changed
+                if self.steps == 1:
+                    self.set_init_lives(info)
+                done_life = self.is_done_for_life(info, reward)
 
             # update reward
             game_rewards += reward
@@ -64,7 +65,7 @@ class SARSATrainer(QTrainer):
 
     def _train(self):
         """Train the q network"""
-        for episode_num in range(self.cfg.TRAIN.NUM_EPISODES):
+        for episode_num in range(1, self.cfg.TRAIN.NUM_EPISODES + 1):
             # set start time
             episode_start_time = time.time()
 
@@ -82,7 +83,7 @@ class SARSATrainer(QTrainer):
             # save model
             if self.cfg.LOGGER.SAVE_MODEL:
                 if episode_num > 1:
-                    if episode_num % self.cfg.LOGGER.SAVE_MODEL_INTERVAL == 0:
+                    if episode_num % self.cfg.LOGGER.SAVE_MODEL_INTERVAL == 1:
                         self._save_model(self.net)
                     
                     # save the best model
@@ -92,21 +93,30 @@ class SARSATrainer(QTrainer):
                             self.net, suffix=f"best_{int(self.best_avg_reward)}"
                         )
 
+            # evaluate
+            if self.cfg.TRAIN.get("EVALUATE_INTERVAL", None) and self.env_eval and episode_num % self.cfg.TRAIN.EVALUATE_INTERVAL == 0:
+                self.evaluate()
+
             # early stop
             if self.early_stopping_condition():
                 break
 
     def update(self, state, next_state, reward, action, done):
         """Update (train) the network."""
+        if self.use_gpu:
+            state = self.pipeline(state)
+            reward = self.convert_input_type(reward)
+            done = self.convert_input_type(done)
+
         # estimate target values
         value_next = self.estimate_target_values(self.pipeline(next_state))
-        target = reward + self.cfg.TRAIN.DISCOUNT_RATE * value_next * ~done
+        target = reward + self.cfg.TRAIN.DISCOUNT_RATE * value_next * (1 - done)
 
         # estimate action values q(s,a;\theta)
         pred = self.net(state)[0][action]
 
         # update parameters
-        loss = self.criterion(pred, target)
+        loss = self.criterion(pred, target.detach())
         self.gradient_descent(self.net.parameters(), loss)
 
         # update loss history

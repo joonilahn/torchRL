@@ -44,20 +44,22 @@ class DQNTrainer(QLearningTrainer):
             self.frame_num += 1
             
             # get action using epsilon greedy
-            action, q_value = self.net.predict_e_greedy(self.pipeline(state), self.env, e)
+            action, q_value = self.net.predict_e_greedy(self.pipeline(state), self.env, e, num_output=self.num_output)
             self.q_values.append(q_value)
 
             # take the action (step)
             next_state, reward, done, info = self.env.step(action)
+            if isinstance(action, list):
+                action = action[0]
 
             # For Atari, stack the next state to the current states
             if self.cfg.ENV.TYPE == "Atari":
                 state[:, :, 4] = next_state
 
-            # check whether game's life has changed
-            if (self.steps == 1) and (self.cfg.ENV.TYPE == "Atari"):
-                self.set_init_lives(info)
-            done_life = self.is_done_for_life(info, reward)
+                # check whether game's life has changed
+                if self.steps == 1:
+                    self.set_init_lives(info)
+                done_life = self.is_done_for_life(info, reward)
 
             # update reward
             game_rewards += reward
@@ -79,7 +81,7 @@ class DQNTrainer(QLearningTrainer):
 
             # update the q_net (experience replay)
             if (
-                self.cfg.TRAIN.TRAIN_BY_EPISODE == False
+                not self.cfg.TRAIN.TRAIN_BY_EPISODE
                 and self.frame_num > self.cfg.TRAIN.START_TRAIN
                 and self.frame_num % self.cfg.TRAIN.TRAIN_INTERVAL == 0
                 and len(self.buffer) > self.cfg.TRAIN.BATCH_SIZE
@@ -112,7 +114,7 @@ class DQNTrainer(QLearningTrainer):
             self.gradient_descent(self.net.parameters(), loss)
 
             # update loss history
-            self.losses.append(float(loss.detach().data))
+            self.losses.append(float(loss.data))
             self.train_iters += 1
 
             if self.train_iters % self.cfg.TRAIN.TARGET_SYNC_INTERVAL == 0:
@@ -120,7 +122,7 @@ class DQNTrainer(QLearningTrainer):
 
     def _train(self):
         """Train the q network"""
-        for episode_num in range(self.cfg.TRAIN.NUM_EPISODES):
+        for episode_num in range(1, self.cfg.TRAIN.NUM_EPISODES + 1):
             # set start time
             episode_start_time = time.time()
 
@@ -163,6 +165,10 @@ class DQNTrainer(QLearningTrainer):
                             self.net, suffix=f"best_{int(self.best_avg_reward)}"
                         )
 
+            # evaluate
+            if self.cfg.TRAIN.get("EVALUATE_INTERVAL", None) and self.env_eval and episode_num % self.cfg.TRAIN.EVALUATE_INTERVAL == 0:
+                self.evaluate()
+
             # early stop
             if self.early_stopping_condition():
                 break
@@ -173,6 +179,6 @@ class DQNTrainer(QLearningTrainer):
 
         targets <- R + gamma * max_a_Q_target(S',a;theta-)
         """
-        values_target = self.target_net(next_states).detach().max(1)[0]
+        values_target = self.target_net(next_states).max(1)[0]
 
         return values_target

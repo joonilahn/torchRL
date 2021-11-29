@@ -20,20 +20,31 @@ class ActionValueMLP(nn.Module):
         return self.net(state)
 
     def _to_tensor(self, x):
-        return torch.tensor(x, dtype=torch.float32).unsqueeze(0)
+        x = torch.tensor(x, dtype=torch.float32)
+        if len(x.size()) == 1:
+            x = x.unsqueeze(0)
+        return x
 
-    def predict(self, state):
+    def predict(self, state, num_output=1):
         if not isinstance(state, torch.Tensor):
             state = self._to_tensor(state)
         with torch.no_grad():
-            q_values = self.forward(state)
-        q_value, action = q_values.max(1)
-        return int(action), float(q_value)
+            q_values = self.forward(state).cpu()
+        if num_output > 1:
+            q_values, actions = q_values.sort(descending=True)
+            return actions[0, :num_output].tolist(), float(
+                q_values[0, :num_output].mean()
+            )
+        else:
+            q_value, action = q_values.max(1)
+            return int(action), float(q_value)
 
-    def predict_e_greedy(self, state, env, e):
-        action, q_value = self.predict(state)
+    def predict_e_greedy(self, state, env, e, num_output=1):
+        action, q_value = self.predict(state, num_output=num_output)
         if np.random.rand() < e:
             action = env.action_space.sample()
+            if num_output == 1 and isinstance(action, list):
+                action = action[0]
         return action, q_value
 
     def copy_parameters(self, model):
