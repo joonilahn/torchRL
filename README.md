@@ -10,7 +10,11 @@ PyTorch Implementations of basic Reinforcement Learning algorithms.
 
 * Tested on "CartPole-v1", "BreakoutDeterministic-v4" and "SpaceInvadersDeterministic-v4" settings.
 
-<p align="center"><img src="./anim/cartpole_result.gif" width="400" height="300"/>
+<p align="left">
+    <img src="./anim/cartpole_result.gif" width="300"/>
+    <img src="./anim/breakout_result.gif" height="200"/>
+    <img src="./anim/spaceInvaders_result.gif" height="200"/>
+</p>
 
 ## Algorithms
 1. SARSA
